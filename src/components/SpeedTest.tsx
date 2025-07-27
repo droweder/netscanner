@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useNativeCapabilities } from "@/hooks/useNativeCapabilities";
 import { Download, Upload, Zap, Wifi } from "lucide-react";
 
 interface SpeedTestResult {
@@ -15,44 +16,46 @@ export const SpeedTest = () => {
   const [currentTest, setCurrentTest] = useState<'ping' | 'download' | 'upload' | null>(null);
   const [result, setResult] = useState<SpeedTestResult | null>(null);
   const [progress, setProgress] = useState(0);
+  const { isNative, networkInfo, performSpeedTest } = useNativeCapabilities();
 
   const runSpeedTest = async () => {
     setIsRunning(true);
     setResult(null);
     setProgress(0);
 
-    // Simula teste de ping
-    setCurrentTest('ping');
-    for (let i = 0; i <= 100; i += 10) {
-      setProgress(i);
-      await new Promise(resolve => setTimeout(resolve, 100));
+    try {
+      // Simula teste de ping
+      setCurrentTest('ping');
+      for (let i = 0; i <= 100; i += 10) {
+        setProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      // Simula teste de download
+      setCurrentTest('download');
+      setProgress(0);
+      for (let i = 0; i <= 100; i += 5) {
+        setProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 80));
+      }
+
+      // Simula teste de upload
+      setCurrentTest('upload');
+      setProgress(0);
+      for (let i = 0; i <= 100; i += 4) {
+        setProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 70));
+      }
+
+      // Usa o teste nativo se disponível
+      const testResults = await performSpeedTest();
+      setResult(testResults);
+    } catch (error) {
+      console.error('Speed test failed:', error);
+    } finally {
+      setIsRunning(false);
+      setCurrentTest(null);
     }
-
-    // Simula teste de download
-    setCurrentTest('download');
-    setProgress(0);
-    for (let i = 0; i <= 100; i += 5) {
-      setProgress(i);
-      await new Promise(resolve => setTimeout(resolve, 80));
-    }
-
-    // Simula teste de upload
-    setCurrentTest('upload');
-    setProgress(0);
-    for (let i = 0; i <= 100; i += 4) {
-      setProgress(i);
-      await new Promise(resolve => setTimeout(resolve, 70));
-    }
-
-    // Resultado final simulado
-    setResult({
-      download: Math.floor(Math.random() * 80) + 20, // 20-100 Mbps
-      upload: Math.floor(Math.random() * 40) + 10,   // 10-50 Mbps
-      ping: Math.floor(Math.random() * 20) + 5       // 5-25 ms
-    });
-
-    setIsRunning(false);
-    setCurrentTest(null);
   };
 
   const getTestIcon = () => {
@@ -86,6 +89,13 @@ export const SpeedTest = () => {
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold mb-2">Teste de Velocidade</h2>
         <p className="text-muted-foreground">Meça a velocidade da sua conexão</p>
+        {isNative && (
+          <div className="mt-2">
+            <span className="text-xs bg-success/20 text-success px-2 py-1 rounded-full">
+              🚀 Modo Nativo - {networkInfo.connected ? 'Conectado' : 'Desconectado'}
+            </span>
+          </div>
+        )}
       </div>
 
       {!result && !isRunning && (

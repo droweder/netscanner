@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useNativeCapabilities } from "@/hooks/useNativeCapabilities";
 import { Wifi, Search, Smartphone, Monitor, Printer, Router, HardDrive } from "lucide-react";
 
 interface Device {
@@ -77,17 +78,21 @@ export const NetworkScanner = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [devices, setDevices] = useState<Device[]>([]);
   const [showDevices, setShowDevices] = useState(false);
+  const { isNative, networkInfo, performNetworkScan } = useNativeCapabilities();
 
-  const startScan = () => {
+  const startScan = async () => {
     setIsScanning(true);
     setShowDevices(false);
     
-    // Simula scan progressivo
-    setTimeout(() => {
-      setDevices(MOCK_DEVICES);
-      setIsScanning(false);
+    try {
+      const discoveredDevices = await performNetworkScan();
+      setDevices(discoveredDevices);
       setShowDevices(true);
-    }, 3000);
+    } catch (error) {
+      console.error('Scan failed:', error);
+    } finally {
+      setIsScanning(false);
+    }
   };
 
   return (
